@@ -1,0 +1,84 @@
+Cook Version history 
+('!' = breaking change)
+--------------------------------------------------------------------------
+2.0.0:
+ ! - Entirely rewrote command line options handling.
+     Now it relies on std.getopt. See -help for details
+   - Added support for renamed imports (e.g. import foo = bar.Foo) and
+     selective imports (e.g. import std.stdio: writefln).
+     Dependency parser still needs a lot of work, thought.
+   - <target>.conf now overrides default.conf
+ ! - Removed deprecated and useless functionality
+
+1.9.1:
+   - Added "-dc" option to specify default config file
+
+1.9:
+   - Splitted the project to several modules instead of storing everything 
+     in one large file
+   - Added support for platform-specific configuration keys that override 
+     default ones ("linux.compiler", "windows.lflags" etc)
+   - Added full support for static libraries under Windows and Linux
+   - Added a package system
+
+1.8.5:
+   - Cook now compiles with newest DMD version
+
+1.8.4:
+   - Added -run option to run the program after compilation
+   - Added a configuration key to force modules (modules.forced)
+     They will be compiled and linked even if no other module depend on them
+   - Pattern formatting is now recursive
+
+1.8.3:
+   - Added support for default configuration file ("default.conf") 
+     for all main modules in the project
+
+1.8.2:
+   - Fixed a minor bug with configuration overriding
+
+1.8.1:
+   - Fixed some bugs under Windows
+
+1.8:
+   - Added configuration file support
+   - Rewrote configuration handling code
+   - Added compile and link patterns (project.compile, project.link, project.linklib)
+
+1.7.4:
+   - Renamed project to "Cook"
+
+1.7.3:
+   - Module parser now recognizes import lists 
+     (for example, "import std.stdio, std.string, std.conv;")
+
+1.7.2:
+   - Added -C, -L, -strip, -f, -s options
+   - Fixed some bugs and name conflicts under Windows
+
+1.7.1.1:
+   - Rewrote backwards dependency tracer
+   - Added reuse of object files between different dependency trees
+   - Build now can build itself ($ ./build build -o build2)
+   - Removed default entries in blackList
+   - Renamed "t_module" to "Module", "appArgument" to "AppArgument",
+     "collection" to "Collection".
+    
+1.7.1:
+ ! - Rewrote project scanner
+ ! - Added support for multiple main modules/dependency trees in one project
+ ! - Cache filename now depends on main module ("main.cache" by default), 
+     so no need to explicitly define it
+ ! - Renamed "-mcache" to "-cache" 
+   - Added -emulate, -help options
+   - Added help information
+
+1.7.0:
+ ! - Completely rewrote parameters handling code
+ ! - Added -quiet, -rebuild, -nocache, -lib, -clean, -exclude, -release, 
+     -mcache, -noconsole options
+ ! - Renamed "build.cache" to "modules.cache"
+ ! - Removed autodetection of *.rc file
+   - Replaced tabs with spaces according to official D coding style
+   - Added quit function
+
