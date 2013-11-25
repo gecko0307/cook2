@@ -248,23 +248,20 @@ class BuildSession
     void scanDependencies(string fileName)
     {
         DModule m;
+        
+        // if it is a new module
         if (!(fileName in projectModules))
         {
             if (!ops.quiet) writefln("Analyzing \"%s\"...", fileName);
             m = new DModule;
             m.lastModified = timeLastModified(fileName);
-            auto deps = getModuleDependencies(fileName, config.get("source.ext"));
-            m.imports = deps;
+            m.imports = getModuleDependencies(fileName, config.get("source.ext"));
             m.packageName = pathToModule(dirName(fileName));
             projectModules[fileName] = m;
-
-            foreach(importedModule; deps)
-            {
-                if (exists(importedModule))
-                    scanDependencies(importedModule);
-            }
+            
+            scanModule(m);
         }
-        else
+        else // if we already have it
         {
             m = projectModules[fileName];
 
@@ -276,21 +273,28 @@ class BuildSession
             {
                 if (!ops.quiet) writefln("Analyzing \"%s\"...", fileName);
                 m.lastModified = lm;
-                auto deps = getModuleDependencies(fileName, config.get("source.ext"));
-                m.imports = deps;
+                m.imports = getModuleDependencies(fileName, config.get("source.ext"));
                 m.forceRebuild = true;
-                m.rescan = true;
-            }
-
-            if (m.rescan)
+                scanModule(m);
+            }	
+        }
+    }
+    
+    void scanModule(DModule m)
+    {
+        foreach(importedModule; m.imports)
+        {
+            if (exists(importedModule))
+                scanDependencies(importedModule);
+            else
             {
-                m.rescan = false;
-                foreach(importedModule; m.imports)
-                {
-                    if (exists(importedModule))
-                    scanDependencies(importedModule);
-                }
-            }		
+                // Treat it as package import (<importedModule>/package.d)
+                string pkgModule = 
+                    stripExtension(importedModule) ~ "/"
+                  ~ moduleToPath("package", config.get("source.ext"));
+                if (exists(pkgModule))
+                    scanDependencies(pkgModule);
+            }
         }
     }
 

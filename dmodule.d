@@ -44,7 +44,7 @@ final class DModule
     DModule[string] backdeps;
     string packageName;
     bool forceRebuild = false;
-    bool rescan = true;
+    //bool rescan = true;
 
     override string toString() 
     {
@@ -61,7 +61,13 @@ string[] getModuleDependencies(string filename, string ext)
     auto text = readText(filename);
     auto lex = new Lexer(text);
     lex.addDelimiters([";", ",", "=", ":", "(", ")", "{", "}"]);
+    
     string[] imports;
+    void addImport(string moduleName)
+    {
+        imports ~= moduleToPath(moduleName, ext);
+    }
+    
     bool expectModuleDef = false;
     bool importStatement = false;
     bool ignoreUntilSemicolon = false;
@@ -85,12 +91,12 @@ string[] getModuleDependencies(string filename, string ext)
             }
             else if ((lexeme == ",") && importStatement && !ignoreUntilSemicolon)
             {
-                imports ~= moduleToPath(tmpModuleName, ext);
+                addImport(tmpModuleName);
                 expectModuleDef = true;
             }
             else if ((lexeme == ";") && importStatement)
             {
-                imports ~= moduleToPath(tmpModuleName, ext);
+                addImport(tmpModuleName);
                 importStatement = false;
             }
             else if ((lexeme == "=") && importStatement && !ignoreUntilSemicolon)
