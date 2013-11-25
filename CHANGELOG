@@ -3,10 +3,11 @@ Cook Version history
 --------------------------------------------------------------------------
 2.0.0:
  ! - Entirely rewrote command line options handling.
-     Now it relies on std.getopt. See -help for details
+     Now it relies on std.getopt. See --help for details
    - Added support for renamed imports (e.g. import foo = bar.Foo) and
      selective imports (e.g. import std.stdio: writefln).
      Dependency parser still needs a lot of work, thought.
+   - Added support for package imports (new in DMD 2.064)
    - <target>.conf now overrides default.conf
  ! - Removed deprecated and useless functionality
 
