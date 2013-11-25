@@ -171,7 +171,7 @@ class BuildSession
 
         version(Windows)
         {
-            if (opt.noconsole) 
+            if (ops.noconsole) 
                 config.append("lflags", "-L/exet:nt/su:windows ");
         }
 
@@ -433,7 +433,7 @@ class BuildSession
                     writeln(command);
                 if (!ops.emulate)
                 {
-                    retcode = std.process.system(command);
+                    auto retcode = std.process.system(command);
                     if (retcode)
                         quit(1);
                 }
