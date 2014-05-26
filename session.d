@@ -132,8 +132,12 @@ class BuildSession
 
             if (extension(config.get("modules.main")) == ".d") 
                 config.set("modules.main", config.get("modules.main")[0..$-2]);
-            tempTarget = config.get("modules.main");
+            tempTarget = baseName(config.get("modules.main"));
             config.set("modules.cache", config.get("modules.main") ~ ".cache");
+            
+            string maindir = dirName(config.get("modules.main"));
+            config.set("modules.maindir", maindir);
+            config.append("cflags", "-I%modules.maindir%");
         }
 
         //if ("-o" in appArguments)
@@ -284,16 +288,32 @@ class BuildSession
     {
         foreach(importedModule; m.imports)
         {
+            string subprojectModule = 
+                config.get("modules.maindir") ~ "/" 
+              ~ importedModule;
+              
+            writeln(subprojectModule);
+            
             if (exists(importedModule))
                 scanDependencies(importedModule);
+            else if (exists(subprojectModule))
+                scanDependencies(subprojectModule);
             else
             {
                 // Treat it as package import (<importedModule>/package.d)
+                
                 string pkgModule = 
                     stripExtension(importedModule) ~ "/"
                   ~ moduleToPath("package", config.get("source.ext"));
+                  
+                string subprojectPkgModule = 
+                    config.get("modules.maindir") ~ "/"
+                  ~ pkgModule;
+                  
                 if (exists(pkgModule))
                     scanDependencies(pkgModule);
+                else if (exists(subprojectPkgModule))
+                    scanDependencies(subprojectPkgModule);
             }
         }
     }
