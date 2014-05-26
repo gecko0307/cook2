@@ -291,8 +291,6 @@ class BuildSession
             string subprojectModule = 
                 config.get("modules.maindir") ~ "/" 
               ~ importedModule;
-              
-            writeln(subprojectModule);
             
             if (exists(importedModule))
                 scanDependencies(importedModule);
