@@ -9,6 +9,7 @@ Cook Version history
      Dependency parser still needs a lot of work, thought.
    - Added support for package imports (new in DMD 2.064)
    - <target>.conf now overrides default.conf
+   - Added subproject import scanning
  ! - Removed deprecated and useless functionality
 
 1.9.1:
