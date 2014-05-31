@@ -123,11 +123,12 @@ class BuildSession
             config.append("lflags", "-L-rpath -L\".\" -L-ldl ");
         }
 
+        config.set("modules.maindir", ".");
+
         if (ops.targets.length)
         {
             // FIXME: currently we use only first given target
             string mainModule = ops.targets[0];
-
             config.set("modules.main", moduleToPath(mainModule, ""));
 
             if (extension(config.get("modules.main")) == ".d") 
@@ -137,7 +138,6 @@ class BuildSession
             
             string maindir = dirName(config.get("modules.main"));
             config.set("modules.maindir", maindir);
-            config.append("cflags", "-I%modules.maindir%");
         }
 
         //if ("-o" in appArguments)
@@ -198,6 +198,8 @@ class BuildSession
             if (exists(configFilename))
                 readConfiguration(config, configFilename);
         }
+
+        config.append("cflags", " -I%modules.maindir% ");
 
         if (ops.release)
             config.append("cflags", " -release -O -inline -noboundscheck ");
