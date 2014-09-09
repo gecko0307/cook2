@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2011-2013 Timur Gafarov 
+Copyright (c) 2011-2014 Timur Gafarov 
 
 Boost Software License - Version 1.0 - August 17th, 2003
 
@@ -28,90 +28,165 @@ DEALINGS IN THE SOFTWARE.
 
 module dmodule;
 
-import std.datetime;
+import std.stdio;
 import std.file;
+import std.ascii;
+import std.conv;
 import std.array;
+import std.path;
+import std.datetime;
+
 import lexer;
 
-/* 
- * Source code module, with all dependency information
- */
-final class DModule
+struct Pattern
 {
-    public:
-    SysTime lastModified;
-    string[] imports;
-    DModule[string] backdeps;
-    string packageName;
-    bool forceRebuild = false;
-    //bool rescan = true;
+    string[] symbols;
+    uint position;
 
-    override string toString() 
+    bool satisfies(string token)
     {
-        string output = lastModified.toISOExtString() ~ " ";
-        foreach(i,v; imports) 
-            output ~= v ~ " ";
-        return output;
+        if (symbols[position] == "*")
+        {
+            if (isIdentifier(token))
+            {
+                position++;
+                if (position == symbols.length)
+                    position = 0;
+                return true;
+            }
+            else
+            {
+                position = 0;
+                return false;
+            }
+        }
+        else if (symbols[position] == "*,")
+        {
+            if (isIdentifier(token))
+            {
+                return true;
+            }
+            else if (token == ",")
+            {
+                return true;
+            }
+            else
+            {
+                position++;
+                if (position == symbols.length)
+                {
+                    position = 0;
+                    return false;
+                }
+                else
+                {
+                    return satisfies(token);
+                }
+            }
+        }
+        else
+        {
+            string sym = symbols[position];
+            if (token == sym)
+            {
+                position++;
+                if (position == symbols.length)
+                    position = 0;
+                return true;
+            }
+            else
+            {
+                position = 0;
+                return false;
+            }
+        }
+    }
+
+    string toString()
+    {
+        return symbols.to!string;
     }
 }
 
-// TODO: needs refactoring
-string[] getModuleDependencies(string filename, string ext)
+struct FilterLevel
 {
-    auto text = readText(filename);
-    auto lex = new Lexer(text);
-    lex.addDelimiters([";", ",", "=", ":", "(", ")", "{", "}"]);
-    
-    string[] imports;
-    void addImport(string moduleName)
-    {
-        imports ~= moduleToPath(moduleName, ext);
-    }
-    
-    bool expectModuleDef = false;
-    bool importStatement = false;
-    bool ignoreUntilSemicolon = false;
-    string tmpModuleName = "";
+    Pattern[] patterns;
+    bool positive = true;
 
-    string lexeme = "";
-    do 
+    void addPattern(string[] symbols)
     {
-        lexeme = lex.getLexeme();
-        if (lexeme.length > 0)
+        patterns ~= Pattern(symbols, 0);
+    }
+
+    bool satisfies(string token)
+    {
+        bool res = false;
+        foreach(ref p; patterns)
+            if (positive)
+                res = res | p.satisfies(token);
+            else
+                res = res | (!p.satisfies(token));
+        return res;
+    }
+}
+
+class Filter
+{
+    Lexer lex;
+    FilterLevel[] levels;
+    string current;
+
+    this(string text)
+    {
+        lex = new Lexer(text);
+        lex.addDelimiters();
+    }
+
+    FilterLevel* addLevel(bool positive = true)
+    {
+        FilterLevel flevel;
+        flevel.positive = positive;
+        levels ~= flevel;
+        return &levels[$-1];
+    }
+
+    string getNext()
+    {
+        do
         {
-            if (expectModuleDef)
+            lex.readNext();
+            string token = lex.current;
+            if (token == "")
+                return token;
+            else 
             {
-                expectModuleDef = false;
-                tmpModuleName = lexeme;
-            }
-            else if (lexeme == "import")
-            {
-                expectModuleDef = true;
-                importStatement = true;
-            }
-            else if ((lexeme == ",") && importStatement && !ignoreUntilSemicolon)
-            {
-                addImport(tmpModuleName);
-                expectModuleDef = true;
-            }
-            else if ((lexeme == ";") && importStatement)
-            {
-                addImport(tmpModuleName);
-                importStatement = false;
-            }
-            else if ((lexeme == "=") && importStatement && !ignoreUntilSemicolon)
-            {
-                expectModuleDef = true;
-            }
-            else if ((lexeme == ":") && importStatement && !ignoreUntilSemicolon)
-            {
-                ignoreUntilSemicolon = true;
+                bool res = false;
+                foreach(ref level; levels)
+                {
+                    if (!level.satisfies(token))
+                    {
+                        res = false;
+                        break;
+                    }
+                    else
+                        res = true;
+                }
+                if (res)
+                    return token;
             }
         }
-    } 
-    while (lexeme.length > 0);
+        while(true);
+    }
 
-    return imports;
+    void readNext()
+    {
+        current = getNext();
+    }
+}
+
+bool isIdentifier(string s)
+{
+    return (s.length && (isAlpha(s[0]) || s[0] == '_'));
 }
 
 string moduleToPath(string modulename, string ext)
@@ -127,5 +202,215 @@ string pathToModule(string path)
     string mdl = path;
     mdl = replace(mdl, "/", ".");
     return mdl;	
+}
+
+final class DModule
+{
+    private:
+
+    Filter filter;
+    string[string] imports;
+
+    public:
+
+    string filename;
+    string ext;
+    string packageName;
+    SysTime lastModified;
+    DModule[string] backdeps;
+    int[string] versionIds;
+    int[string] debugIds;
+    bool forceRebuild = false;
+    // TODO: simple debug condition
+
+    this(string filename, string ext)
+    {
+        this.filename = filename;
+        this.ext = ext;
+
+        auto text = readText(filename);
+        filter = new Filter(text);
+        auto l1 = filter.addLevel();
+        l1.addPattern(["{"]);
+        l1.addPattern(["}"]);
+
+        l1.addPattern(["else"]);
+        l1.addPattern(["version", "(", "*", ")"]);
+        l1.addPattern(["version", "=", "*"]);
+        l1.addPattern(["debug", "(", "*", ")"]);
+        l1.addPattern(["debug", "=", "*"]);
+        l1.addPattern(["import", "*,", ";"]);
+        l1.addPattern(["import", "*", ":"]);
+        l1.addPattern(["import", "*", "=", "*"]);
+/*
+        version(Posix)   versionIds["Posix"] = 1;
+        version(linux)   versionIds["linux"] = 1;
+        version(Windows) versionIds["Windows"] = 1;
+        version(Win32)   versionIds["Win32"] = 1;
+        version(Win64)   versionIds["Win64"] = 1;
+        version(OSX)     versionIds["OSX"] = 1;
+        version(X86)     versionIds["X86"] = 1;
+        version(X86_64)  versionIds["X86_64"] = 1;
+        versionIds["D_Version2"] = 1;
+*/
+    }
+
+    override string toString() 
+    {
+        string output = lastModified.toISOExtString() ~ " ";
+        foreach(i,v; imports) 
+            output ~= v ~ " ";
+        return output;
+    }
+
+    string[] importedModules()
+    {
+        return imports.keys;
+    }
+
+    string[] importedFiles()
+    {
+        return imports.values;
+    }
+
+    void addImportFile(string filename)
+    {
+        imports[pathToModule(stripExtension(filename))] = filename;
+    }
+
+    void addImport(string moduleName)
+    {
+        imports[moduleName] = moduleToPath(moduleName, ext);
+    }
+
+    bool buildDependencyList()
+    {
+        try
+        {
+            parseImports();
+        }
+        catch(Exception)
+        {
+            writefln("%s: syntax error", filename);
+            return false;
+        }
+        return true;
+    }
+
+    private:
+
+    void parseImports()
+    {
+        string token = "";
+        do 
+        {
+            filter.readNext();
+            token = filter.current;
+            if (token.length)
+            {
+                parseStatement(false);
+            }
+        }
+        while (token.length > 0);
+    }
+
+    void parseStatement(bool skip)
+    {
+        if (filter.current == "version" || filter.current == "debug")
+        {
+            if (!skip)
+                parseVersionStatement();
+        }
+        else if (filter.current == "import")
+        {
+            if (!skip)
+                parseImportStatement();
+        }
+    }
+
+    void parseVersionStatement()
+    {
+        string stat = filter.current;
+        filter.readNext(); // pop version/debug
+
+        if (filter.current == "(")
+        {
+            filter.readNext(); // pop (
+            string id = filter.current;
+
+            filter.readNext(); // pop id
+            if (filter.current != ")")
+                throw new Exception("Syntax error");
+            filter.readNext(); // pop )
+            bool skip;
+
+            if (stat == "version")
+                skip = (id in versionIds) is null;
+            else if (stat == "debug")
+                skip = (id in debugIds) is null;
+
+            parseBlock(skip);
+
+            if (filter.current == "else")
+            {
+                parseBlock(!skip);
+            }
+        }
+        else if (filter.current == "=")
+        {
+            filter.readNext(); // pop =
+            string id = filter.current;
+
+            if (stat == "version")
+                versionIds[id] = 1;
+            else if (stat == "debug")
+                debugIds[id] = 1;
+        }
+    }
+
+    void parseImportStatement()
+    {
+        filter.readNext(); // pop import
+        string impName = filter.current;
+        filter.readNext(); // pop impName
+
+        // End of import list
+        if (filter.current == ";" || filter.current == ":")
+        {
+            addImport(impName);
+            return;
+        }
+        // Import list
+        else if (filter.current == ",")
+        {
+            addImport(impName);
+            parseImportStatement();
+        }
+        // Renamed import
+        else if (filter.current == "=")
+        {
+            filter.readNext(); // pop =
+            addImport(filter.current);
+        }
+    }
+
+    void parseBlock(bool skip)
+    {
+        if (filter.current == "{")
+        {
+            while(filter.current != "}")
+            {
+                filter.readNext();
+                parseStatement(skip);
+                if (filter.current == "")
+                    throw new Exception("Syntax error");
+            }
+            filter.readNext(); // pop }
+        }
+        else
+        {
+            parseStatement(skip);
+        }
+    }
 }
 

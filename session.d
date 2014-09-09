@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2011-2013 Timur Gafarov 
+Copyright (c) 2013-2014 Timur Gafarov 
 
 Boost Software License - Version 1.0 - August 17th, 2003
 
@@ -29,28 +29,27 @@ DEALINGS IN THE SOFTWARE.
 module session;
 
 import std.stdio;
-import std.getopt;
 import std.path;
 import std.file;
 import std.string;
 import std.datetime;
 
-import conf;
-import dmodule;
-import lexer;
 import cmdopt;
+import conf;
+import lexer;
+import dmodule;
+import project;
 
 class BuildSession
 {
     CmdOptions ops;
     Config config;
-    DModule[string] projectModules;
 
     // Quit at any time without throwing an exception
     void quit(int code, string message = "")
     {
         if (message.length > 0)
-            writeln(message);
+            writefln("Cook session failed: %s", message);
 
         if (ops._debug_)
             printConfig();
@@ -74,13 +73,15 @@ class BuildSession
             writeln(v);
     }
 
-    this(CmdOptions cmdops)
+    this(CmdOptions cmdops, Config conf)
     {
         ops = cmdops;
+        config = conf;
+        prepare();
+    }
 
-        // Create a configuration manager
-        config = new Config;
-
+    void prepare()
+    {
         // Set default configuration keys
         string tempTarget = "main";
         config.set("prephase", "", false);
@@ -140,7 +141,6 @@ class BuildSession
             config.set("modules.maindir", maindir);
         }
 
-        //if ("-o" in appArguments)
         if (ops.output.length)
         {
             tempTarget = ops.output;
@@ -171,7 +171,7 @@ class BuildSession
         if ("./" ~ tempTarget != ops.program)
             config.set("target", tempTarget);
         else 
-            quit(1, "Illegal target name: \"" ~ tempTarget ~ "\" (conflicts with Cook executable)");
+            quit(1, "illegal target name: \"" ~ tempTarget ~ "\" (conflicts with Cook executable)");
 
         version(Windows)
         {
@@ -207,69 +207,90 @@ class BuildSession
         config.set("source.ext", ((config.get("source.ext")[0]=='.')?"":".") ~ config.get("source.ext"));
     }
 
-    void build()
+    void build(Project proj)
     {
-        readCache();
-        scanProjectHierarchy();
-        traceBackwardDependencies();
-        addForcedModules();
+        // TODO: use these when compiling
+        foreach(v; split(config.get("version")))
+            proj.versionIds[v] = 1;
+
+        foreach(v; split(config.get("debug")))
+            proj.debugIds[v] = 1;
+
+        readCache(proj);
+        scanProjectHierarchy(proj);
+        traceBackwardDependencies(proj);
+        addForcedModules(proj);
+        writeCache(proj);
+
+        if (ops.dump.length)
+        {
+            if (ops.dump in proj.modules)
+            {
+                auto m = proj.modules[ops.dump];
+                writefln("Filename: %s", m.filename);
+                writefln("Package name: %s", m.packageName);
+                writefln("Last modified: %s", m.lastModified);
+                writefln("Imports: %s", m.importedFiles);
+                writefln("Version ids: %s", m.versionIds);
+                writefln("Debug ids: %s", m.debugIds);
+            }
+        }
+
         doPrephase();
-        compileAndLink();
+        compileAndLink(proj);
         strip();
         run();
-
         if (ops._debug_)
             printConfig();
     }
 
-    void readCache()
+    void readCache(Project proj)
     {
-        if (exists(config.get("modules.cache")) && !ops.nocache)
+        string cacheFile = config.get("modules.cache");
+        if (exists(cacheFile) && !ops.nocache)
         {
-            string cache = readText(config.get("modules.cache"));
+            string cache = readText(cacheFile);
             foreach (line; splitLines(cache))
             {
                 auto tokens = split(line);
-                auto m = new DModule;
+                auto m = proj.addModule(tokens[0]);
                 m.lastModified = SysTime.fromISOExtString(tokens[1]);
-                auto deps = tokens[2..$];
-                m.imports = deps;
-                projectModules[tokens[0]] = m;			
+                foreach (i; tokens[2..$])
+                    m.addImportFile(i);			
             }
         }
     }
 
-    void scanProjectHierarchy()
+    void scanProjectHierarchy(Project proj)
     {
-        string mainModuleFilename = config.get("modules.main") ~ config.get("source.ext");
-        if (exists(mainModuleFilename))
-            scanDependencies(mainModuleFilename);
+        proj.mainModuleFilename = config.get("modules.main") ~ config.get("source.ext");
+        if (exists(proj.mainModuleFilename))
+            scanDependencies(proj, proj.mainModuleFilename);
         else
-            quit(1, "No main module found");
+            quit(1, "no main module found");
 
-        if (projectModules.length == 0) 
-            quit(1, "No source files found");
+        if (proj.modules.length == 0) 
+            quit(1, "no source files found");
     }
 
-    void scanDependencies(string fileName)
+    void scanDependencies(Project proj, string fileName)
     {
         DModule m;
         
         // if it is a new module
-        if (!(fileName in projectModules))
+        if (!(fileName in proj.modules))
         {
             if (!ops.quiet) writefln("Analyzing \"%s\"...", fileName);
-            m = new DModule;
+            m = proj.addModule(fileName);
             m.lastModified = timeLastModified(fileName);
-            m.imports = getModuleDependencies(fileName, config.get("source.ext"));
-            m.packageName = pathToModule(dirName(fileName));
-            projectModules[fileName] = m;
-            
-            scanModule(m);
+            if (!m.buildDependencyList())
+                quit(1, "cannot build proper dependency list");
+            m.packageName = pathToModule(dirName(fileName));           
+            scanModule(proj, m);
         }
         else // if we already have it
         {
-            m = projectModules[fileName];
+            m = proj.modules[fileName];
 
             //TODO: cache this
             m.packageName = pathToModule(dirName(fileName));
@@ -279,61 +300,61 @@ class BuildSession
             {
                 if (!ops.quiet) writefln("Analyzing \"%s\"...", fileName);
                 m.lastModified = lm;
-                m.imports = getModuleDependencies(fileName, config.get("source.ext"));
+                if (!m.buildDependencyList())
+                    quit(1, "cannot build proper dependency list");
                 m.forceRebuild = true;
-                scanModule(m);
+                scanModule(proj, m);
             }	
         }
     }
-    
-    void scanModule(DModule m)
+
+    void scanModule(Project proj, DModule m)
     {
-        foreach(importedModule; m.imports)
+        foreach(importedFile; m.importedFiles)
         {
-            string subprojectModule = 
+            string subprojectFile = 
                 config.get("modules.maindir") ~ "/" 
-              ~ importedModule;
+              ~ importedFile;
             
-            if (exists(importedModule))
-                scanDependencies(importedModule);
-            else if (exists(subprojectModule))
-                scanDependencies(subprojectModule);
+            if (exists(importedFile))
+                scanDependencies(proj, importedFile);
+            else if (exists(subprojectFile))
+                scanDependencies(proj, subprojectFile);
             else
             {
-                // Treat it as package import (<importedModule>/package.d)
-                
-                string pkgModule = 
-                    stripExtension(importedModule) ~ "/"
+                // Treat it as package import (<importedFile>/package.d)
+                string pkgFile = 
+                    stripExtension(importedFile) ~ "/"
                   ~ moduleToPath("package", config.get("source.ext"));
                   
-                string subprojectPkgModule = 
+                string subprojectPkgFile = 
                     config.get("modules.maindir") ~ "/"
-                  ~ pkgModule;
+                  ~ pkgFile;
                   
-                if (exists(pkgModule))
-                    scanDependencies(pkgModule);
-                else if (exists(subprojectPkgModule))
-                    scanDependencies(subprojectPkgModule);
+                if (exists(pkgFile))
+                    scanDependencies(proj, pkgFile);
+                else if (exists(subprojectPkgFile))
+                    scanDependencies(proj, subprojectPkgFile);
             }
         }
     }
 
-    void traceBackwardDependencies()
+    void traceBackwardDependencies(Project proj)
     {
         if (!ops.nobacktrace)
         {
-            foreach(modulei, modulev; projectModules)
+            foreach(modulei, modulev; proj.modules)
             {
-                foreach (mName; modulev.imports)
+                foreach (mName; modulev.importedFiles)
                 {
-                    if (mName in projectModules)
+                    if (mName in proj.modules)
                     {
-                        auto imModule = projectModules[mName];
+                        auto imModule = proj.modules[mName];
                         imModule.backdeps[modulei] = modulev;
                     }
                 }
             }
-            foreach(m; projectModules)
+            foreach(m; proj.modules)
             {
                 foreach(i, v; m.backdeps)
                     v.forceRebuild = v.forceRebuild || m.forceRebuild;
@@ -341,22 +362,22 @@ class BuildSession
         }
     }
 
-    void addForcedModules()
+    void addForcedModules(Project proj)
     {
         foreach(fileName; split(config.get("modules.forced")))
         {
             if (exists(fileName))
             {
-                DModule m = new DModule;
+                DModule m = proj.addModule(fileName);
                 m.lastModified = timeLastModified(fileName);
-                auto deps = getModuleDependencies(fileName, config.get("source.ext"));
-                m.imports = deps;
-                projectModules[fileName] = m;
 
-                foreach(importedModule; deps)
+                if (!m.buildDependencyList())
+                    quit(1, "cannot build proper dependency list");
+
+                foreach(importedFile; m.importedFiles)
                 {
-                    if (exists(importedModule))
-                        scanDependencies(importedModule);
+                    if (exists(importedFile))
+                        scanDependencies(proj, importedFile);
                 }
             }
         }
@@ -379,25 +400,33 @@ class BuildSession
         }
     }
 
-    void compileAndLink()
+    void writeCache(Project proj)
+    {
+        string cache;
+        foreach (i, m; proj.modules)
+        {
+            //TODO: cache module's package also
+            cache ~= i ~ " " ~ m.toString() ~ "\n";
+        }
+
+        if (!ops.emulate) 
+            if (!ops.nocache)
+                std.file.write(config.get("modules.cache"), cache);
+    }
+
+    void compileAndLink(Project proj)
     {
         string[] pkgList = split(config.get("project.packages"));
 
-        //string projdir = std.path.getcwd();
-
         string linkList;
-        string cache;
 
         // Compile modules
         if (config.get("obj.path") != "")
             if (!exists(config.get("obj.path"))) 
                 mkdir(config.get("obj.path"));
         bool terminate = false;
-        foreach (i, v; projectModules)
+        foreach (i, v; proj.modules)
         {
-            //TODO: cache module's package also
-            cache ~= i ~ " " ~ v.toString() ~ "\n";
-
             if (!terminate && exists(i))
             {
                 string targetObjectName = i;
@@ -410,9 +439,7 @@ class BuildSession
                     || ops.rebuild)
                 {
                     if (config.get("obj.path.use") == "false")
-                    {
                         targetObject = targetObjectName;
-                    }
 
                     config.set("source", i);
                     config.set("object", targetObject);
@@ -428,9 +455,7 @@ class BuildSession
                 }
 
                 if (config.get("obj.path.use") == "false")
-                {
                     targetObject = targetObjectName;
-                }
 
                 if (!matches(v.packageName, pkgList))
                     linkList ~= targetObject ~ " ";
@@ -440,10 +465,7 @@ class BuildSession
         // If compilation error occured
         if (terminate)
         {
-            if (!ops.emulate) 
-                if (!ops.nocache)
-                    std.file.write(config.get("modules.cache"), cache);
-            quit(1);
+            quit(1, "compilation error");
         }
 
         // Compile resource file, if any
@@ -465,11 +487,6 @@ class BuildSession
             }
         }
 
-        // Write cache file to disk
-        if (!ops.emulate) 
-            if (!ops.nocache)
-                std.file.write(config.get("modules.cache"), cache);
-
         // Link packages, if any
         // WARNING: alpha stage, needs work!
         // TODO: do not relink a package, if it is unchanged
@@ -478,7 +495,7 @@ class BuildSession
         foreach(pkg; pkgList)
         {
             string pkgLinkList;
-            foreach(i, m; projectModules)
+            foreach(i, m; proj.modules)
             {
                 if (m.packageName == pkg)
                 {
@@ -505,7 +522,7 @@ class BuildSession
             {
                 auto retcode = std.process.system(command);
                 if (retcode)
-                    quit(1, "Package linking error");
+                    quit(1, "package linking error");
             }
 
             pkgLibList ~= config.get("package") ~ " ";
@@ -526,7 +543,7 @@ class BuildSession
             {
                 auto retcode = std.process.system(command);
                 if (retcode)
-                    quit(1, "Linking error");
+                    quit(1, "linking error");
             }
         }
         else
@@ -540,7 +557,7 @@ class BuildSession
             {
                 auto retcode = std.process.system(command);
                 if (retcode)
-                    quit(1, "Linking error");
+                    quit(1, "linking error");
             }
         }
     }

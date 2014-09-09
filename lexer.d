@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2011-2013 Timur Gafarov 
+Copyright (c) 2011-2014 Timur Gafarov 
 
 Boost Software License - Version 1.0 - August 17th, 2003
 
@@ -78,6 +78,12 @@ final class Lexer
     string multiLineCommentBegin = "/*";
     string multiLineCommentEnd = "*/";
     string[] stringLiteralQuote = ["\"","\'"];
+
+    string current;
+
+    uint line = 1;
+    uint lastTokenLine = 0;
+    bool noTokensOnCurrentLine = true;
 	
     this(string src)
     {
@@ -96,6 +102,11 @@ final class Lexer
         sort!("a.length > b.length")(delimiters);
     }
 
+    void readNext()
+    {
+        current = getLexeme();
+    }
+
     string getLexeme()
     {
         string result;
@@ -108,13 +119,23 @@ final class Lexer
         while(!satisfied)
         {
             string lexeme = getLexemeUnfiltered();
+            //writeln(lexeme);
             if (!lexeme) satisfied = true;
             else if (lexeme == "\n") 
             { 
-                if (!stringLiteral) commentSingleLine = false; 
-                else tempStringLiteral ~= lexeme;
+                if (!commentMultiLine)
+                {
+                    if (!stringLiteral) commentSingleLine = false; 
+                    else tempStringLiteral ~= lexeme;
+                }
+                line++;
+                noTokensOnCurrentLine = true;
             }
-            else if (lexeme == singleLineComment) { if (!stringLiteral) commentSingleLine = true; }
+            else if (lexeme == singleLineComment && !commentMultiLine) 
+            {
+                if (!stringLiteral)
+                    commentSingleLine = true;
+            }
             else if (!commentSingleLine)
             {
                 if (lexeme == multiLineCommentBegin) { if (!stringLiteral) commentMultiLine = true; }
@@ -151,6 +172,13 @@ final class Lexer
                 }
             }
         }
+
+        if (result != "" && noTokensOnCurrentLine)
+        {
+            lastTokenLine = line;
+            noTokensOnCurrentLine = false;
+        }
+
 	return result;
     }
 

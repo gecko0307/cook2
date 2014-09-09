@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2013 Timur Gafarov 
+Copyright (c) 2013-2014 Timur Gafarov 
 
 Boost Software License - Version 1.0 - August 17th, 2003
 
@@ -56,6 +56,8 @@ class CmdOptions
     string conf;
     string s;
 
+    string dump;
+
     string program;
     string[] targets;
 
@@ -83,7 +85,8 @@ class CmdOptions
           "conf",      &conf,
           "debug",     &_debug_,
           "nobacktrace", &nobacktrace,
-          "s",         &s 
+          "s",         &s,
+          "dump",      &dump 
         );}
         catch(Exception)
         {

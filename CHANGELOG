@@ -6,7 +6,8 @@ Cook Version history
      Now it relies on std.getopt. See --help for details
    - Added support for renamed imports (e.g. import foo = bar.Foo) and
      selective imports (e.g. import std.stdio: writefln).
-     Dependency parser still needs a lot of work, thought.
+   - Reimplemented dependency parser with support for "version" and "debug"
+     conditions
    - Added support for package imports (new in DMD 2.064)
    - <target>.conf now overrides default.conf
    - Added subproject import scanning
