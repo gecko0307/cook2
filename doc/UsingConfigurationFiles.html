@@ -1,0 +1,89 @@
+<html lang="en"> 
+<head> 
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<title>Using configuration files</title>
+</head> 
+<body> 
+<h1>Using configuration files</h1>
+<p>By default, Cook doesn't need any configuration file. But if you want to use other compiler than DMD, or specify path to compiler and linker, it is essential to write proper *.conf file.</p>
+<h2>Syntax</h2>
+<p>Cook automatically detects and loads a configuration file. It should reside in project directory and have a name of the main module + ".conf" extension:</p>
+<pre>
+ Main module/target: <b>main</b>
+
+ Main module file: <b>main.d</b>
+
+ Configuration file: <b>main.conf</b>
+</pre>
+<p>Configuration is a bunch of simple identifier/value pairs. Identifier is separated from value with a colon (:), pairs are separated from each other with semicolons (;). For values that include spaces, string syntax is supported ("some text").</p>
+<p>Example:</p>
+<pre>
+ identifier1: value1;
+ identifier2: "some text here";
+</pre>
+<h2>Built-in identifiers</h2>
+<p>Cook has a number of identifiers that it understands internally:</p>
+<pre>
+ <b>source.language</b> - language of the project. Default value is "d". This identifier is reserved for future use;
+
+ <b>source.ext</b> - extension for source files. Default value is "d";
+
+ <b>compiler</b> - compiler to use. Default value is "dmd";
+
+ <b>linker</b> - linker to use. Default value is "dmd";
+
+ <b>librarian</b> - librarian to use. Default value is "lib" under Windows and "dmd" under Linux;
+
+ <b>cflags</b> - compiler flags;
+
+ <b>lflags</b> - linker flags;
+
+ <b>obj.path</b> - where to store object files. Default value is "o_windows/" under Windows or "o_linux/" under Linux;
+
+ <b>obj.ext</b> - extension for source files. Default value is ".obj" under Windows or ".o" under Linux;
+
+ <b>target</b> - override default target name;
+
+ <b>rc</b> - specify resource file;
+
+ <b>project.compile</b> - override compilation command with your own one;
+
+ <b>project.link</b> - override linking command with your own one;
+
+ <b>project.linklib</b> - override library linking command with your own one.
+
+ More identifiers could be added in future.
+</pre>
+<h2>Patterns</h2>
+<p>You can introduce any new identifiers you want. This is useful when using so called <b>patterns</b>. They allow you to use identifiers as "variables" directly in a value. Current syntax for this is %id%:</p>
+<pre>
+ compiler: "gdc";
+ linker: "gdc";
+ cflags: "-fversion=Tango -fversion=Posix";
+ lflags: "";
+ project.compile: "%compiler% %cflags% -c %source% -o %object%";
+ project.link: "%linker% %lflags% -o %target% %objects%";
+</pre>
+<p>"source", "object" and "objects" are built-in identifiers representing current source file, object file and all object files list accordingly. They are meant to be read-only.</p>
+<h2>Platform-specific identifiers</h2>
+<p>It is a quite common case when compilation parameters are not the same under different operating systems. Cook deals with it by supporting platform-specific identifiers that override "default" ones. They are preceded by platform specifier ("windows." and "linux.")</p>
+<p>Here's the example - using custom path to DMD under Windows and Linux:</p>
+<pre>
+ linux.compiler_dir: "/opt/dmd2-2.065.0/linux";
+ windows.compiler_dir: "C:/D/dmd2/windows";
+
+ linux.compiler: "%compiler_dir%/bin32/dmd";
+ linux.linker: "%compiler_dir%/bin32/dmd";
+
+ windows.compiler: "%compiler_dir%/bin/dmd";
+ windows.linker: "%compiler_dir%/bin/dmd";
+
+ linux.obj.path: "o_linux_dmd/";
+ windows.obj.path: "o_windows_dmd/";
+
+ cflags: "-O -release -inline -noboundscheck";
+ linux.project.compile: "%compiler% %cflags% -c %source% -of%object%";
+ windows.project.compile: "%compiler% %cflags% -c %source% -of%object%";
+</pre>
+</body>
+</html>
