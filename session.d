@@ -87,7 +87,7 @@ class BuildSession
         config.set("prephase", "", false);
         config.set("postphase", "", false);
         config.set("source.language", "d", false);
-        config.set("source.ext", "d", false);
+        config.set("source.ext", ".d", false);
         config.set("compiler", "dmd", false);
         config.set("linker", "dmd", false);
         version(Windows) config.set("librarian", "lib", false);
@@ -130,10 +130,12 @@ class BuildSession
         {
             // FIXME: currently we use only first given target
             string mainModule = ops.targets[0];
-            config.set("modules.main", moduleToPath(mainModule, ""));
+            config.set("modules.main", mainModule);
 
+            // strip extension, if any
             if (extension(config.get("modules.main")) == ".d") 
                 config.set("modules.main", config.get("modules.main")[0..$-2]);
+
             tempTarget = baseName(config.get("modules.main"));
             config.set("modules.cache", config.get("modules.main") ~ ".cache");
             
@@ -204,7 +206,7 @@ class BuildSession
         if (ops.release)
             config.append("cflags", " -release -O -inline -noboundscheck ");
 
-        config.set("source.ext", ((config.get("source.ext")[0]=='.')?"":".") ~ config.get("source.ext"));
+        //config.set("source.ext", ((config.get("source.ext")[0]=='.')?"":".") ~ config.get("source.ext"));
     }
 
     void build(Project proj)
