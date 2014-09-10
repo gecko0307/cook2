@@ -44,6 +44,8 @@ class BuildSession
 {
     CmdOptions ops;
     Config config;
+    string[] versionIds;
+    string[] debugIds;
 
     // Quit at any time without throwing an exception
     void quit(int code, string message = "")
@@ -205,19 +207,11 @@ class BuildSession
 
         if (ops.release)
             config.append("cflags", " -release -O -inline -noboundscheck ");
-
-        //config.set("source.ext", ((config.get("source.ext")[0]=='.')?"":".") ~ config.get("source.ext"));
     }
 
     void build(Project proj)
     {
-        // TODO: use these when compiling
-        foreach(v; split(config.get("version")))
-            proj.versionIds[v] = 1;
-
-        foreach(v; split(config.get("debug")))
-            proj.debugIds[v] = 1;
-
+        setVersionIds(proj);
         readCache(proj);
         scanProjectHierarchy(proj);
         traceBackwardDependencies(proj);
@@ -244,6 +238,34 @@ class BuildSession
         run();
         if (ops._debug_)
             printConfig();
+    }
+
+    void setVersionIds(Project proj)
+    {
+        versionIds = split(config.get("version"));
+        debugIds = split(config.get("debug"));
+
+        foreach(v; versionIds)
+            proj.versionIds[v] = 1;
+
+        foreach(v; debugIds)
+            proj.debugIds[v] = 1;
+
+        string ver;
+        foreach(i, v; versionIds)
+        {
+            ver ~= " -version=" ~ v;
+        }
+        if (ver.length)
+            config.append("cflags", ver);
+
+        string deb;
+        foreach(i, v; debugIds)
+        {
+            deb ~= " -debug=" ~ v;
+        }
+        if (deb.length)
+            config.append("cflags", deb);
     }
 
     void readCache(Project proj)
