@@ -233,7 +233,7 @@ final class DModule
         auto l1 = filter.addLevel();
         l1.addPattern(["{"]);
         l1.addPattern(["}"]);
-
+        l1.addPattern([";"]);
         l1.addPattern(["else"]);
         l1.addPattern(["version", "(", "*", ")"]);
         l1.addPattern(["version", "=", "*"]);
