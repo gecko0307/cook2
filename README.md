@@ -8,7 +8,7 @@ http://github.com/gecko0307/cook.
 
 Requirements
 ------------
-Cook is written in D and supports Windows and Linux. By default it works with Digital Mars D compiler (DMD), but you can use it with other compilers (and, for some extent, even with other languages!) as well by writing proper configuration file. Documentation is on the way, stay tuned.
+Cook is written in D and supports Windows and Linux. By default it works with Digital Mars D compiler (DMD), but you can use it with other compilers (and, for some extent, even with other languages!) as well by writing proper configuration file.
 
 License
 -------
