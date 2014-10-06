@@ -29,12 +29,16 @@ DEALINGS IN THE SOFTWARE.
 module main;
 
 import std.stdio;
+import std.process: shell;
+import std.string;
+import std.path;
 
 import project;
 import cmdopt;
 import conf;
 import dmodule;
 import session;
+import exdep;
 
 static string versionString = "2.0.0";
 
@@ -50,7 +54,15 @@ void main(string[] args)
 
     Config conf = new Config();
     BuildSession bs = new BuildSession(ops, conf);
+
     Project proj = new Project(ops, conf);
+    foreach(exd; proj.exdeps)
+    {
+        exd.fetch(ops);
+        conf.append("project.external", format("%s ", exd.location));
+        conf.append("cflags", format(" -I%s ", exd.location));
+    }
+    
     bs.build(proj);
 }
 

@@ -46,6 +46,7 @@ class BuildSession
     Config config;
     string[] versionIds;
     string[] debugIds;
+    string[] externals;
 
     // Quit at any time without throwing an exception
     void quit(int code, string message = "")
@@ -211,8 +212,17 @@ class BuildSession
 
     void build(Project proj)
     {
+        string externalsStr = config.get("project.external");
+        if (externalsStr.length)
+            externals = split(externalsStr);
+
+        //writeln(externals);
+
         setVersionIds(proj);
-        readCache(proj);
+        
+        if (!ops.rebuild)
+            readCache(proj);
+
         scanProjectHierarchy(proj);
         traceBackwardDependencies(proj);
         addForcedModules(proj);
@@ -297,7 +307,7 @@ class BuildSession
             quit(1, "no source files found");
     }
 
-    void scanDependencies(Project proj, string fileName)
+    void scanDependencies(Project proj, string fileName, bool globalFile = false)
     {
         DModule m;
         
@@ -306,6 +316,7 @@ class BuildSession
         {
             if (!ops.quiet) writefln("Analyzing \"%s\"...", fileName);
             m = proj.addModule(fileName);
+            m.globalFile = globalFile;
             m.lastModified = timeLastModified(fileName);
             if (!m.buildDependencyList())
                 quit(1, "cannot build proper dependency list");
@@ -332,18 +343,40 @@ class BuildSession
         }
     }
 
+    bool existsInExternals(string filename, ref string externalFilename)
+    {
+        foreach(e; externals)
+        {
+            string f = e ~ "/" ~ filename;
+            if (exists(f))
+            {
+                externalFilename = f;
+                return true;
+            }
+        }
+        return false;
+    }
+
     void scanModule(Project proj, DModule m)
     {
         foreach(importedFile; m.importedFiles)
         {
-            string subprojectFile = 
-                config.get("modules.maindir") ~ "/" 
-              ~ importedFile;
+            string subprojectFile = importedFile;
+            
+            if (config.get("modules.maindir") != ".")
+                subprojectFile = 
+                    config.get("modules.maindir") ~ "/" ~ importedFile;
+
+            string externalFile;
             
             if (exists(importedFile))
                 scanDependencies(proj, importedFile);
             else if (exists(subprojectFile))
                 scanDependencies(proj, subprojectFile);
+            else if (existsInExternals(subprojectFile, externalFile))
+            {
+                scanDependencies(proj, externalFile, true);
+            }
             else
             {
                 // Treat it as package import (<importedFile>/package.d)
@@ -456,7 +489,11 @@ class BuildSession
                 string targetObjectName = i;
                 string tobjext = extension(targetObjectName);
                 targetObjectName = targetObjectName[0..$-tobjext.length] ~ config.get("obj.ext");
-                string targetObject = config.get("obj.path") ~ targetObjectName;
+                string targetObject;
+                if (v.globalFile)
+                    targetObject = targetObjectName;
+                else
+                    targetObject = config.get("obj.path") ~ "/" ~ targetObjectName;
 
                 if ((timeLastModified(i) > timeLastModified(targetObject, SysTime.min)) 
                     || v.forceRebuild

@@ -86,7 +86,7 @@ class CmdOptions
           "debug",     &_debug_,
           "nobacktrace", &nobacktrace,
           "s",         &s,
-          "dump",      &dump 
+          "dump",      &dump
         );}
         catch(Exception)
         {

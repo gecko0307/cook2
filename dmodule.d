@@ -221,6 +221,8 @@ final class DModule
     int[string] versionIds;
     int[string] debugIds;
     bool forceRebuild = false;
+    bool globalFile = false;
+
     // TODO: simple debug condition
 
     this(string filename, string ext)

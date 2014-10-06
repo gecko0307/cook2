@@ -30,10 +30,14 @@ module project;
 
 import std.file;
 import std.datetime;
+import std.array;
+
+import std.stdio;
 
 import cmdopt;
 import conf;
 import dmodule;
+import exdep;
 
 class Project
 {
@@ -46,6 +50,8 @@ class Project
 
     DModule[string] modules;
     string mainModuleFilename;
+
+    Exdep[string] exdeps;
 
     this(CmdOptions cmdops, Config conf)
     {
@@ -62,6 +68,8 @@ class Project
         version(X86)     versionIds["X86"] = 1;
         version(X86_64)  versionIds["X86_64"] = 1;
         versionIds["D_Version2"] = 1;
+
+        genExdeps();
     }
 
     DModule addModule(string filename)
@@ -71,6 +79,38 @@ class Project
         m.debugIds = debugIds.dup;
         modules[filename] = m;
         return m;
+    }
+
+    string[] getExternalDeps(string depsConfFilename)
+    {
+        string[] res;
+
+        Config depsConf = new Config();
+
+        if (exists(depsConfFilename))
+            readConfiguration(depsConf, depsConfFilename);
+
+        string deps = depsConf.get("project.dependencies");
+
+        if (deps.length)
+            res = split(deps);
+
+        return res;
+    }
+
+    void genExdeps(string depsConfFilename = "deps.conf")
+    {
+        string[] deps = getExternalDeps(depsConfFilename);
+
+        foreach(desc; deps)
+        {
+            //writeln(desc);
+            Exdep e = new Exdep(desc);
+            // TODO: read deps.conf from exdeps's root dir
+            exdeps[e.id] = e;
+
+            genExdeps(e.location ~ "/" ~ "deps.conf");
+        }
     }
 }
 
