@@ -104,12 +104,12 @@ class Project
 
         foreach(desc; deps)
         {
-            //writeln(desc);
             Exdep e = new Exdep(desc);
-            // TODO: read deps.conf from exdeps's root dir
-            exdeps[e.id] = e;
-
-            genExdeps(e.location ~ "/" ~ "deps.conf");
+            if (!(e.id in exdeps))
+            {
+                exdeps[e.id] = e;
+                genExdeps(e.location ~ "/" ~ "deps.conf");
+            }
         }
     }
 }

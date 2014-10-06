@@ -259,7 +259,7 @@ final class DModule
 
     override string toString() 
     {
-        string output = lastModified.toISOExtString() ~ " ";
+        string output = lastModified.toISOExtString() ~ " " ~ to!string(cast(int)globalFile) ~ " ";
         foreach(i,v; imports) 
             output ~= v ~ " ";
         return output;

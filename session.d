@@ -33,6 +33,7 @@ import std.path;
 import std.file;
 import std.string;
 import std.datetime;
+import std.conv;
 
 import cmdopt;
 import conf;
@@ -289,8 +290,9 @@ class BuildSession
                 auto tokens = split(line);
                 auto m = proj.addModule(tokens[0]);
                 m.lastModified = SysTime.fromISOExtString(tokens[1]);
-                foreach (i; tokens[2..$])
-                    m.addImportFile(i);			
+                m.globalFile = cast(bool)to!uint(tokens[2]);
+                foreach (i; tokens[3..$])
+                    m.addImportFile(i);		
             }
         }
     }
