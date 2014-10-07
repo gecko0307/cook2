@@ -104,7 +104,7 @@ class Project
 
         foreach(desc; deps)
         {
-            Exdep e = new Exdep(desc);
+            Exdep e = new Exdep(desc, ops.https);
             if (!(e.id in exdeps))
             {
                 exdeps[e.id] = e;

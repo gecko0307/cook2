@@ -31,6 +31,7 @@ module exdep;
 import std.stdio;
 import std.digest.crc;
 import std.format;
+import std.array;
 import std.string;
 import std.file;
 import std.path;
@@ -44,7 +45,7 @@ string home(string path)
     version(Posix)
         homeDir = environment.get("HOME");
     version(Windows)
-        homeDir = environment.get("USERPROFILE");
+        homeDir = environment.get("APPDATA").replace("\\", "/"); // ~ "/AppData/Roaming";
     return homeDir ~ "/" ~ path;
 }
 
@@ -58,12 +59,15 @@ class Exdep
     string path;
 
     string location;
+	
+	bool useHTTPS = false;
 
     //Project project;
 
-    this(string desc)
+    this(string desc, bool https)
     {
         descriptor = desc;
+		useHTTPS = https;
         id = crc32Of(descriptor).crcHexString;
         string name;
         formattedRead(descriptor, "%s:%s", &name, &path);
@@ -117,8 +121,15 @@ class Exdep
     {
         if (vcs == "git")
         {
-            // TODO: support for HTTPS
-            string command = format("git clone git@%s:%s.git %s", hostname, path, location);
+            string command;
+			if (useHTTPS)
+			{
+			    //if (!std.file.exists(location))
+				//mkdir(location);
+			    command = format("git clone https://%s/%s.git %s", hostname, path, location);
+			}
+			else
+			    command = format("git clone git@%s:%s.git %s", hostname, path, location);
             writeln(command);
             std.process.system(command);
         }
@@ -128,7 +139,7 @@ class Exdep
     {
         if (vcs == "git")
         {
-            string command = format("cd %s; git pull", location);
+            string command = format("cd %s && git pull", location);
             writeln(command);
             std.process.system(command);
         }

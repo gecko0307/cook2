@@ -47,6 +47,7 @@ class CmdOptions
     bool run = false;
     bool _debug_ = false;
     bool nobacktrace = false;
+	bool https = false;
 
     string output;
     string cache;
@@ -86,7 +87,8 @@ class CmdOptions
           "debug",     &_debug_,
           "nobacktrace", &nobacktrace,
           "s",         &s,
-          "dump",      &dump
+          "dump",      &dump,
+		  "https",     &https
         );}
         catch(Exception)
         {
