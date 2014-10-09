@@ -329,14 +329,12 @@ class BuildSession
         }
         else // if we already have it
         {
-		    writefln("Scanning file %s", fileName);
             m = proj.modules[fileName];
 
             //TODO: cache this
             m.packageName = pathToModule(dirName(fileName));
 
             auto lm = timeLastModified(fileName);
-			writefln("%s > %s == %s", lm, m.lastModified, lm > m.lastModified);
             if (lm > m.lastModified)
             {
                 if (!ops.quiet) writefln("Analyzing \"%s\"...", fileName);
@@ -424,11 +422,9 @@ class BuildSession
             }
             foreach(mName, m; proj.modules)
             {
-			    writefln("%s, %s", mName, m.forceRebuild);
                 foreach(i, v; m.backdeps)
 				{
                     v.forceRebuild = v.forceRebuild || m.forceRebuild;
-					writefln(" -- %s, %s", i, v.forceRebuild);
 				}
             }
         }
