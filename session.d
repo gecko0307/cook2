@@ -292,7 +292,7 @@ class BuildSession
                 m.lastModified = SysTime.fromISOExtString(tokens[1]);
                 m.globalFile = cast(bool)to!uint(tokens[2]);
                 foreach (i; tokens[3..$])
-                    m.addImportFile(i);		
+                    m.addImportFile(i);        
             }
         }
     }
@@ -301,9 +301,9 @@ class BuildSession
     {
         proj.mainModuleFilename = config.get("modules.main") ~ config.get("source.ext");
         if (exists(proj.mainModuleFilename))
-		{
+        {
             scanDependencies(proj, proj.mainModuleFilename);
-	    }
+        }
         else
             quit(1, "no main module found");
 
@@ -314,6 +314,9 @@ class BuildSession
     void scanDependencies(Project proj, string fileName, bool globalFile = false)
     {
         DModule m;
+
+        if (!exists(fileName))
+            return;
         
         // if it is a new module
         if (!(fileName in proj.modules))
@@ -343,12 +346,12 @@ class BuildSession
                     quit(1, "cannot build proper dependency list");
                 m.forceRebuild = true;
                 scanModule(proj, m);
-            }	
+            }    
         }
-		
-		foreach (mName; m.importedFiles)
+        
+        foreach (mName; m.importedFiles)
         {
-		    scanDependencies(proj, mName);
+            scanDependencies(proj, mName);
         }
     }
 
@@ -423,9 +426,9 @@ class BuildSession
             foreach(mName, m; proj.modules)
             {
                 foreach(i, v; m.backdeps)
-				{
+                {
                     v.forceRebuild = v.forceRebuild || m.forceRebuild;
-				}
+                }
             }
         }
     }
