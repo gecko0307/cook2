@@ -227,8 +227,6 @@ class BuildSession
         if (externalsStr.length)
             externals = split(externalsStr);
 
-        //writeln(externals);
-
         setVersionIds(proj);
         
         if (!ops.rebuild)

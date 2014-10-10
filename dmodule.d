@@ -244,17 +244,6 @@ final class DModule
         l1.addPattern(["import", "*,", ";"]);
         l1.addPattern(["import", "*", ":"]);
         l1.addPattern(["import", "*", "=", "*"]);
-/*
-        version(Posix)   versionIds["Posix"] = 1;
-        version(linux)   versionIds["linux"] = 1;
-        version(Windows) versionIds["Windows"] = 1;
-        version(Win32)   versionIds["Win32"] = 1;
-        version(Win64)   versionIds["Win64"] = 1;
-        version(OSX)     versionIds["OSX"] = 1;
-        version(X86)     versionIds["X86"] = 1;
-        version(X86_64)  versionIds["X86_64"] = 1;
-        versionIds["D_Version2"] = 1;
-*/
     }
 
     override string toString() 

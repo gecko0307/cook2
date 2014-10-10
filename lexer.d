@@ -119,7 +119,6 @@ final class Lexer
         while(!satisfied)
         {
             string lexeme = getLexemeUnfiltered();
-            //writeln(lexeme);
             if (!lexeme) satisfied = true;
             else if (lexeme == "\n") 
             { 

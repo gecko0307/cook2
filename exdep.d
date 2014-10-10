@@ -45,7 +45,7 @@ string home(string path)
     version(Posix)
         homeDir = environment.get("HOME");
     version(Windows)
-        homeDir = environment.get("APPDATA").replace("\\", "/"); // ~ "/AppData/Roaming";
+        homeDir = environment.get("APPDATA").replace("\\", "/");
     return homeDir ~ "/" ~ path;
 }
 
@@ -61,8 +61,6 @@ class Exdep
     string location;
     
     bool useHTTPS = false;
-
-    //Project project;
 
     this(string desc, bool https)
     {

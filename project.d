@@ -55,7 +55,7 @@ class Project
 
     this(CmdOptions cmdops, Config conf)
     {
-        ext = conf.get("source.ext"); //".d";
+        ext = conf.get("source.ext");
         ops = cmdops;
         config = conf;
 

@@ -96,6 +96,7 @@ void printHelp(string programName, string programVersion)
       "-l\"...\"           Pass specified option(s) to linker\n"
         "--run             Run program after compilation (does't work in emulation mode)\n"
         "--dc FILE         Specify default configuration file (default \"default.conf\")\n"
+        "--https           Use HTTPS instead of SSH when fetching remote dependencies\n"
     );
 }
 
