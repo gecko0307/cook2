@@ -90,6 +90,7 @@ class BuildSession
     {
         // Set default configuration keys
         string tempTarget = "main";
+        config.set("profile", "default", false);
         config.set("prephase", "", false);
         config.set("postphase", "", false);
         config.set("source.language", "d", false);
@@ -516,7 +517,10 @@ class BuildSession
                 if (v.globalFile)
                 {
                     string hash = crc32Of(targetObjectName).crcHexString;
-                    targetObject = home(format(".cook/obj/%s%s", hash, config.get("obj.ext"))); //targetObjectName;
+                    targetObject = home(format(".cook/obj/%s/%s%s", 
+                        config.get("profile"), 
+                        hash, 
+                        config.get("obj.ext")));
                 }
                 else
                     targetObject = config.get("obj.path") ~ "/" ~ targetObjectName;
