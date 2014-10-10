@@ -59,15 +59,15 @@ class Exdep
     string path;
 
     string location;
-	
-	bool useHTTPS = false;
+    
+    bool useHTTPS = false;
 
     //Project project;
 
     this(string desc, bool https)
     {
         descriptor = desc;
-		useHTTPS = https;
+        useHTTPS = https;
         id = crc32Of(descriptor).crcHexString;
         string name;
         formattedRead(descriptor, "%s:%s", &name, &path);
@@ -122,14 +122,10 @@ class Exdep
         if (vcs == "git")
         {
             string command;
-			if (useHTTPS)
-			{
-			    //if (!std.file.exists(location))
-				//mkdir(location);
-			    command = format("git clone https://%s/%s.git %s", hostname, path, location);
-			}
-			else
-			    command = format("git clone git@%s:%s.git %s", hostname, path, location);
+            if (useHTTPS)
+                command = format("git clone https://%s/%s.git %s", hostname, path, location);
+            else
+                command = format("git clone git@%s:%s.git %s", hostname, path, location);
             writeln(command);
             std.process.system(command);
         }

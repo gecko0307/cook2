@@ -34,12 +34,14 @@ import std.file;
 import std.string;
 import std.datetime;
 import std.conv;
+import std.digest.crc;
 
 import cmdopt;
 import conf;
 import lexer;
 import dmodule;
 import project;
+import exdep;
 
 class BuildSession
 {
@@ -355,7 +357,9 @@ class BuildSession
         }
     }
 
-    bool existsInExternals(string filename, ref string externalFilename)
+    bool existsInExternals(
+        string filename, 
+        ref string externalFilename)
     {
         foreach(e; externals)
         {
@@ -386,9 +390,7 @@ class BuildSession
             else if (exists(subprojectFile))
                 scanDependencies(proj, subprojectFile);
             else if (existsInExternals(subprojectFile, externalFile))
-            {
                 scanDependencies(proj, externalFile, true);
-            }
             else
             {
                 // Treat it as package import (<importedFile>/package.d)
@@ -505,7 +507,10 @@ class BuildSession
                 targetObjectName = targetObjectName[0..$-tobjext.length] ~ config.get("obj.ext");
                 string targetObject;
                 if (v.globalFile)
-                    targetObject = targetObjectName;
+                {
+                    string hash = crc32Of(targetObjectName).crcHexString;
+                    targetObject = home(format(".cook/obj/%s%s", hash, config.get("obj.ext"))); //targetObjectName;
+                }
                 else
                     targetObject = config.get("obj.path") ~ "/" ~ targetObjectName;
 
