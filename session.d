@@ -50,6 +50,7 @@ class BuildSession
     string[] versionIds;
     string[] debugIds;
     string[] externals;
+    bool[string] scanned;
 
     // Quit at any time without throwing an exception
     void quit(int code, string message = "")
@@ -321,6 +322,8 @@ class BuildSession
 
     void scanDependencies(Project proj, string fileName, bool globalFile = false)
     {
+        scanned[fileName] = true;
+
         DModule m;
 
         if (!exists(fileName))
@@ -358,6 +361,7 @@ class BuildSession
         }
         
         foreach (mName; m.importedFiles)
+        if (!(mName in scanned))
         {
             scanDependencies(proj, mName);
         }
