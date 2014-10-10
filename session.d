@@ -187,6 +187,13 @@ class BuildSession
                 config.append("lflags", "-L/exet:nt/su:windows ");
         }
 
+        // Read user-wide default configuration
+        string userConfigFilename = home(".cook/default.conf");
+        if (exists(userConfigFilename))
+        {
+            readConfiguration(config, userConfigFilename);
+        }
+
         // Read default configuration
         string defaultConfigFilename = "default.conf";
         if (exists(defaultConfigFilename))
