@@ -266,7 +266,11 @@ class BuildSession
         debugIds = split(config.get("debug"));
 
         foreach(v; versionIds)
+        {
             proj.versionIds[v] = 1;
+            if (v == "Wine")
+                proj.versionIds["Windows"] = 1;
+        }
 
         foreach(v; debugIds)
             proj.debugIds[v] = 1;
