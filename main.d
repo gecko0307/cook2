@@ -59,8 +59,8 @@ void main(string[] args)
     foreach(exd; proj.exdeps)
     {
         exd.fetch(ops);
-        conf.append("project.external", format("%s ", exd.location));
-        conf.append("cflags", format(" -I%s ", exd.location));
+        conf.append("project.external", format("%s ", exd.srcDir));
+        conf.append("cflags", format(" -I%s ", exd.srcDir));
     }
     
     bs.build(proj);

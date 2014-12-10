@@ -81,7 +81,7 @@ class Project
         return m;
     }
 
-    string[] getExternalDeps(string depsConfFilename)
+    string[] getExternalDeps(string depsConfFilename, out Config conf)
     {
         string[] res;
 
@@ -94,13 +94,16 @@ class Project
 
         if (deps.length)
             res = split(deps);
+            
+        conf = depsConf;
 
         return res;
     }
 
-    void genExdeps(string depsConfFilename = "deps.conf")
+    Config genExdeps(string depsConfFilename = "deps.conf")
     {
-        string[] deps = getExternalDeps(depsConfFilename);
+        Config conf;
+        string[] deps = getExternalDeps(depsConfFilename, conf);
 
         foreach(desc; deps)
         {
@@ -108,9 +111,12 @@ class Project
             if (!(e.id in exdeps))
             {
                 exdeps[e.id] = e;
-                genExdeps(e.location ~ "/" ~ "deps.conf");
+                auto c = genExdeps(e.location ~ "/" ~ "deps.conf");
+                e.subdir = c.get("project.source.dir");
             }
         }
+        
+        return conf;
     }
 }
 

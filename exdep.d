@@ -57,8 +57,11 @@ class Exdep
     string vcs;
     string hostname;
     string path;
-
+    
+    string subdir = "";
     string location;
+    
+    string srcDir;
     
     bool useHTTPS = false;
 
@@ -68,7 +71,7 @@ class Exdep
         useHTTPS = https;
         id = crc32Of(descriptor).crcHexString;
         string name;
-        formattedRead(descriptor, "%s:%s", &name, &path);
+        formattedRead(descriptor, "%s:%s:%s", &name, &path, &subdir);
         auto pos = indexOf(name, "@");
         if (pos >= 0)
             formattedRead(name, "%s@%s", &vcs, &hostname);
@@ -80,6 +83,11 @@ class Exdep
             location = home(format(".cook/remote/%s", id));
         else
             location = path;
+            
+        if (subdir.length)
+            srcDir = location ~ "/" ~ subdir;
+        else
+            srcDir = location;
     }
 
     void print()
