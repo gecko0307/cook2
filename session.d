@@ -143,13 +143,23 @@ class BuildSession
             // strip extension, if any
             if (extension(config.get("modules.main")) == ".d") 
                 config.set("modules.main", config.get("modules.main")[0..$-2]);
-
-            tempTarget = baseName(config.get("modules.main"));
-            config.set("modules.cache", config.get("modules.main") ~ ".cache");
-            
+                            
             string maindir = dirName(config.get("modules.main"));
             config.set("modules.maindir", maindir);
         }
+        
+        // Set cache filename
+        string cacheFilePostfix = "-" ~ config.get("profile");
+        version(Windows)
+        {
+            cacheFilePostfix ~= "-windows.cache";
+        }
+        version(linux)
+        {
+            cacheFilePostfix ~= "-linux.cache";
+        }
+        tempTarget = baseName(config.get("modules.main"));
+        config.set("modules.cache", config.get("modules.main") ~ cacheFilePostfix);
 
         if (ops.output.length)
         {
