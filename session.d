@@ -240,6 +240,35 @@ class BuildSession
 
         setVersionIds(proj);
         
+        if (ops.rebuild)
+        {
+            writeln("Do you really want to rebuild the project? (Y/N)");
+            bool rebuild = false;
+            bool confirmed = false;
+            while(!confirmed)
+            {
+                string input = readln();
+                if (input.length)
+                {
+                    if (input[0] == 'Y' || input[0] == 'y')
+                    {
+                        rebuild = true;
+                        confirmed = true;
+                    }
+                    else if (input[0] == 'N' || input[0] == 'n')
+                    {
+                        confirmed = true;
+                    }
+                }
+                
+                if (!confirmed)
+                    writeln("Please, write Y or N");
+            }
+            
+            if (!rebuild)
+                ops.rebuild = false;
+        }
+        
         if (!ops.rebuild)
             readCache(proj);
 
