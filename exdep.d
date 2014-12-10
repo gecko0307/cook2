@@ -71,7 +71,15 @@ class Exdep
         useHTTPS = https;
         id = crc32Of(descriptor).crcHexString;
         string name;
-        formattedRead(descriptor, "%s:%s:%s", &name, &path, &subdir);
+        try
+        {
+            formattedRead(descriptor, "%s:%s:%s", &name, &path, &subdir);
+        }
+        catch(Exception) {}
+        finally {}
+        
+        // TODO: check the result
+
         auto pos = indexOf(name, "@");
         if (pos >= 0)
             formattedRead(name, "%s@%s", &vcs, &hostname);
