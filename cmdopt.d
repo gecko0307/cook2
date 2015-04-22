@@ -30,7 +30,7 @@ module cmdopt;
 
 import std.stdio;
 import std.getopt;
-import std.process;
+import std.c.process;
 
 class CmdOptions
 {
