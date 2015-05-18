@@ -1,0 +1,18 @@
+<html lang="en"> 
+<head> 
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<title>Response Files</title>
+</head> 
+<body> 
+<h1>Response Files</h1>
+<p>As your project becomes large, you may, depending on the your OS, face a problem of command line prompt length limitation. By default, Cook passes object file names to a linker in a one long command. If your project has too many modules, this command can overflow maximum size of 8192 bytes (under Windows and cmd.exe). This number may vary under different systems, but it exists virtually everywhere. To bypass this issue one can break up the project into smaller parts and compile them as static libraries, but this is not always an option (Cook has support for such technique implemented as package tracker, but its current state is far from perfect). </p>
+<p>An alternative way is using so-called response files. They are simple text files that contain parameters. Cook can automatically create response file with object file names and pass it to a linker, if run with --rsp option:</p>
+<pre>
+  cook --rsp projectName
+</pre>
+<p>If you override linkage command with your own one in a configuration file, remember to add @%modules.rsp% instead of %objects%:</p>
+<pre>
+  project.link: "dmd %lflags% -of%target% @%modules.rsp%";
+</pre>
+</body>
+</html>
