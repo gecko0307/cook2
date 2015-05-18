@@ -111,15 +111,7 @@ class BuildSession
         config.set("target", "", false);
         config.set("rc", "", false);
         config.set("modules.cache", "main.cache", false);
-        config.set("project.compile", "%compiler% %cflags% -c %source% -of%object%", false);
-        config.set("project.link", "%linker% %lflags% -of%target% %objects% %packages%", false);
-        version(Windows) config.set("project.linklib", "%librarian% %lflags% -c -p32 -of%target% %objects%", false);
-        version(linux) config.set("project.linklib", "%librarian% %lflags% -lib -of%target% %objects%", false);
-        version(Windows) config.set("project.linkpkg", "%librarian% %lflags% -c -p32 -of%package% %objects%", false);
-        version(linux) config.set("project.linkpkg", "%librarian% %lflags% -lib -of%package% %objects%", false);
-        version(linux) config.set("project.run", "./%target%", false);
-        version(Windows) config.set("project.run", "%target%", false);
-        config.set("project.packages", "", false);
+        
         version(Windows)
         {
             config.set("obj.path", "o_windows/");
@@ -160,6 +152,43 @@ class BuildSession
         }
         tempTarget = baseName(config.get("modules.main"));
         config.set("modules.cache", config.get("modules.main") ~ cacheFilePostfix);
+        
+        // Set responce file name
+        string rspFilePostfix = "-" ~ config.get("profile");
+        version(Windows)
+        {
+            rspFilePostfix ~= "-windows.rsp";
+        }
+        version(linux)
+        {
+            rspFilePostfix ~= "-linux.rsp";
+        }         
+        config.set("modules.rsp", config.get("modules.main") ~ rspFilePostfix);
+        
+        config.set("project.compile", "%compiler% %cflags% -c %source% -of%object%", false);
+        if (ops.rsp)
+            config.set("project.link", "%linker% %lflags% -of%target% %packages% @" ~ config.get("modules.rsp"), false);
+        else
+            config.set("project.link", "%linker% %lflags% -of%target% %objects% %packages%", false);
+            
+        if (ops.rsp)
+        {
+            version(Windows) config.set("project.linklib", "%librarian% %lflags% -c -p32 -of%target% @" ~ config.get("modules.rsp"), false);
+            version(linux) config.set("project.linklib", "%librarian% %lflags% -lib -of%target% @" ~ config.get("modules.rsp"), false);
+            version(Windows) config.set("project.linkpkg", "%librarian% %lflags% -c -p32 -of%package% @" ~ config.get("modules.rsp"), false);
+            version(linux) config.set("project.linkpkg", "%librarian% %lflags% -lib -of%package% @" ~ config.get("modules.rsp"), false);
+        }
+        else
+        {
+            version(Windows) config.set("project.linklib", "%librarian% %lflags% -c -p32 -of%target% %objects%", false);
+            version(linux) config.set("project.linklib", "%librarian% %lflags% -lib -of%target% %objects%", false);
+            version(Windows) config.set("project.linkpkg", "%librarian% %lflags% -c -p32 -of%package% %objects%", false);
+            version(linux) config.set("project.linkpkg", "%librarian% %lflags% -lib -of%package% %objects%", false);
+        }
+        
+        version(linux) config.set("project.run", "./%target%", false);
+        version(Windows) config.set("project.run", "%target%", false);
+        config.set("project.packages", "", false);
 
         if (ops.output.length)
         {
@@ -170,6 +199,8 @@ class BuildSession
         {
             if (exists(config.get("modules.cache"))) 
                 std.file.remove(config.get("modules.cache"));
+            if (exists(config.get("modules.rsp"))) 
+                std.file.remove(config.get("modules.rsp"));
             // FIXME: use config for these
             if (exists("o_linux")) rmdirRecurse("o_linux");
             if (exists("o_windows")) rmdirRecurse("o_windows");
@@ -539,6 +570,13 @@ class BuildSession
             if (!ops.nocache)
                 std.file.write(config.get("modules.cache"), cache);
     }
+    
+    void writeResponceFile(string rsp)
+    {
+        if (!ops.emulate) 
+            if (ops.rsp)
+                std.file.write(config.get("modules.rsp"), rsp);
+    }
 
     void compileAndLink(Project proj)
     {
@@ -652,6 +690,9 @@ class BuildSession
             config.set("objects", pkgLinkList);
             config.set("package", pkg ~ pkgExt);
             string command = formatPattern(config.get("project.linkpkg"), config, '%');
+            
+            writeResponceFile(pkgLinkList);
+            
             if (!ops.quiet)
                 writeln(command);
             if (!ops.emulate)
@@ -671,6 +712,8 @@ class BuildSession
         {
             version(Windows) config.append("target", ".lib");
             version(linux)   config.append("target", ".a");
+            
+            writeResponceFile(linkList);
 
             string command = formatPattern(config.get("project.linklib"), config, '%');
             if (!ops.quiet)
@@ -684,7 +727,9 @@ class BuildSession
         }
         else
         {
-            version(Windows) config.append("target", ".exe");
+            version(Windows) config.append("target", ".exe"); 
+           
+            writeResponceFile(linkList);
 
             string command = formatPattern(config.get("project.link"), config, '%');
             if (!ops.quiet)

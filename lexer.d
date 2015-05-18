@@ -227,7 +227,7 @@ final class Lexer
         return "";
     }
 
-    string getForward(size_t position, ulong num)
+    string getForward(size_t position, size_t num)
     {
         if (position + num < source.length)
              return source[position..position+num];
