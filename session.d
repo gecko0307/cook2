@@ -490,6 +490,8 @@ class BuildSession
                     scanDependencies(proj, pkgFile);
                 else if (exists(subprojectPkgFile))
                     scanDependencies(proj, subprojectPkgFile);
+                else if (existsInExternals(pkgFile, externalFile))
+                    scanDependencies(proj, externalFile, true);
             }
         }
     }
