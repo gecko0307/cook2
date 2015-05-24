@@ -1,0 +1,32 @@
+<html lang="en"> 
+<head> 
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<title>Step-by-step Tutorial</title>
+</head> 
+<body> 
+<h1>Step-by-step Tutorial.<br/>Configuring Typical Workspace for DMD and Cook</h1>
+<p>Cook is very easy to install and configure. If you are a newcomer, just download a latest binary release of Cook for your platform from <a href="https://github.com/gecko0307/cook2/releases" target="_blank">GitHub repository</a>. Then, download latest version of DMD compiler from <a href="http://dlang.org">http://dlang.org</a>, if you haven't done this yet.</p>
+<p><b>1. Installation.</b> You can install Cook system-wide (copy to your system's programs directory or modify PATH variable), or simply copy Cook executable to the directory with your project. Then, install DMD into some known place, for example, C:\dlang\dmd-2.067 (on Windows) or /opt/dlang/dmd-2.067 (on Linux).</p>
+<p><b>2. Configuring.</b> Create a configuration file. Actually, Cook can work without one, but only if you have DMD in your PATH (this is not very convenient if you update DMD regularly and have several versions installed simultaneously for compatibility reasons). Typical cross-platform configuration file looks as follows:</p>
+<pre>
+  windows.compiler_dir: "C:/dlang/dmd-2.067/windows";
+  linux.compiler_dir: "/opt/dlang/dmd-2.067/linux";
+
+  linux.compiler: "%compiler_dir%/bin32/dmd";
+  linux.linker: "%compiler_dir%/bin32/dmd";
+
+  windows.compiler: "%compiler_dir%/bin/dmd";
+  windows.linker: "%compiler_dir%/bin/dmd";
+
+  windows.obj.path: "o_windows";
+  linux.obj.path: "o_linux";
+</pre>
+<p>Modify paths according to your installation and save the file to project directory as "default.conf".</p>
+<p><b>3. Building.</b> By default, Cook assumes that the project's main module is "main.d". If this is true, you can cd to project directory and simply run "cook". If not, you should pass main module as a parameter:</p>
+<pre>
+  cook foo
+</pre>
+<p>Assuming that main module is "foo.d". By the way, Cook supports multiple main modules in the same project.</p>
+<p>That is all: Cook will scan your project's module hierarchy, compile modules and link them, outputting executable with the same name as the main module (in the example above, "foo.exe" under Windows and "foo" under Linux).</p>
+</body>
+</html>
