@@ -1,0 +1,25 @@
+<html lang="en"> 
+<head> 
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<title>Cross-Compilation</title>
+</head> 
+<body> 
+<h1>Cross-Compilation</h1>
+<p>Cook allows you to build projects for Windows under Linux, using Wine. This requires nothing more than a Windows version of DMD compiler, which run perfectly under Wine. To cross-compile your project, use the following configuration (replace paths to your own ones):</p>
+<pre>
+  profile: "dmd2-2.067-wine";
+  compiler_dir: "/opt/dmd2-2.067.0/windows";
+  compiler: "%compiler_dir%/bin/dmd";
+  linker: "%compiler_dir%/bin/dmd";
+  obj.path: "o_wine_dmd";
+  obj.ext: ".obj";
+  version: "Wine";
+  project.compile: "wine %compiler% %cflags% -c %source% -of%object%";
+  project.link: "wine %compiler% %objects% -of%target%.exe";
+</pre>
+<p>Save this config file separately from your default one (e.g. "wine.conf"). Then run Cook as follows:</p>
+<pre>
+  cook --dc=wine.conf projectName
+</pre>
+</body>
+</html>
