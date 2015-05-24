@@ -15,6 +15,7 @@ Features
 * Low memory requirements (happily builds large projects on outdated 32-bit systems, even with 512 MB RAM!)
 * Powerful and robust dependency scanner with support for "version" and "debug" conditions
 * Fully configurable. You can define paths to compiler and linker, override default compilation/linkage commands, etc.
+* Can cross-compile Windows programs under Linux using Wine
 * Supports automatic dependency resolution from remote Git repositories or local directories (experimental feature). No need for a package registry - everything is fully decentralized, you can fetch any Git repository in the world
 
 License
