@@ -1,0 +1,22 @@
+{
+    "description": "Build automation tool for D",
+    "authors": [
+        "Timur Gafarov"
+    ],
+    "license": "Boost",
+    "homepage": "http://github.com/gecko0307/cook2",
+    "name": "cook",
+    "importPaths": [
+        "."
+    ],
+    "buildRequirements":[
+        "allowWarnings"
+    ],
+    "configurations": [
+        {
+            "name": "application",
+            "targetType": "executable",
+            "sourcePaths": ["."]
+        }
+    ]
+}
