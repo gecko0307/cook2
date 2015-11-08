@@ -39,13 +39,15 @@ import std.process;
 
 import cmdopt;
 
-string home(string path)
+string home(string path, CmdOptions opt)
 {
     string homeDir;
     version(Posix)
         homeDir = environment.get("HOME");
     version(Windows)
         homeDir = environment.get("APPDATA").replace("\\", "/");
+    if (opt.local)
+        homeDir = ".";
     return homeDir ~ "/" ~ path;
 }
 
@@ -65,7 +67,7 @@ class Exdep
     
     bool useHTTPS = false;
 
-    this(string desc, bool https)
+    this(string desc, bool https, CmdOptions cmd)
     {
         descriptor = desc;
         useHTTPS = https;
@@ -88,7 +90,7 @@ class Exdep
 
         if (vcs != "local")
             // TODO: use config to override this
-            location = home(format(".cook/remote/%s", id));
+            location = home(format(".cook/remote/%s", id), cmd);
         else
             location = path;
             

@@ -40,7 +40,7 @@ import dmodule;
 import session;
 import exdep;
 
-static string versionString = "2.1.0";
+static string versionString = "2.1.2";
 
 void main(string[] args)
 {
@@ -99,6 +99,7 @@ void printHelp(string programName, string programVersion)
         "--https       Use HTTPS instead of SSH when fetching remote dependencies\n"
         "--rsp         Pass object file names to linker via responce file\n"
         "              instead of command line\n"
+        "--local       Store temporary data in cwd instead of home directory\n"
     );
 }
 

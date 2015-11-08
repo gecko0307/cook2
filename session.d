@@ -231,7 +231,7 @@ class BuildSession
         }
 
         // Read user-wide default configuration
-        string userConfigFilename = home(".cook/default.conf");
+        string userConfigFilename = home(".cook/default.conf", ops);
         if (exists(userConfigFilename))
         {
             readConfiguration(config, userConfigFilename);
@@ -605,7 +605,7 @@ class BuildSession
                     targetObject = home(format(".cook/obj/%s/%s%s", 
                         config.get("profile"), 
                         hash, 
-                        config.get("obj.ext")));
+                        config.get("obj.ext")), ops);
                 }
                 else
                     targetObject = config.get("obj.path") ~ "/" ~ targetObjectName;
