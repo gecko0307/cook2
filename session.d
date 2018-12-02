@@ -35,6 +35,8 @@ import std.string;
 import std.datetime;
 import std.conv;
 import std.digest.crc;
+import std.process: executeShell;
+import std.algorithm;
 
 import cmdopt;
 import conf;
@@ -62,7 +64,7 @@ class BuildSession
             printConfig();
 
         version(Windows) 
-            std.process.system("pause");
+            executeShell("pause");
         std.c.process.exit(code);
     }
 
@@ -552,7 +554,7 @@ class BuildSession
                 writeln(prephase);
             if (!ops.emulate)
             {
-                retcode = std.process.system(prephase);
+                retcode = executeShell(prephase).status;
                 if (retcode)
                     quit(1, "Prephase error");
             }
@@ -624,7 +626,7 @@ class BuildSession
                         writeln(command);
                     if (!ops.emulate)
                     {
-                        auto retcode = std.process.system(command);
+                        auto retcode = executeShell(command).status;
                         if (retcode)
                             terminate = true;
                     }
@@ -655,7 +657,7 @@ class BuildSession
                     writeln(command);
                 if (!ops.emulate)
                 {
-                    auto retcode = std.process.system(command);
+                    auto retcode = executeShell(command).status;
                     if (retcode)
                         quit(1);
                 }
@@ -699,7 +701,7 @@ class BuildSession
                 writeln(command);
             if (!ops.emulate)
             {
-                auto retcode = std.process.system(command);
+                auto retcode = executeShell(command).status;
                 if (retcode)
                     quit(1, "package linking error");
             }
@@ -722,7 +724,7 @@ class BuildSession
                 writeln(command);
             if (!ops.emulate)
             {
-                auto retcode = std.process.system(command);
+                auto retcode = executeShell(command).status;
                 if (retcode)
                     quit(1, "linking error");
             }
@@ -738,7 +740,7 @@ class BuildSession
                 writeln(command);
             if (!ops.emulate)
             {
-                auto retcode = std.process.system(command);
+                auto retcode = executeShell(command).status;
                 if (retcode)
                     quit(1, "linking error");
             }
@@ -770,7 +772,7 @@ class BuildSession
                 if (!ops.quiet)
                     writeln(command);
                 if (!ops.emulate)
-                    std.process.system(command);
+                    executeShell(command);
             }
         }
     }

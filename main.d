@@ -29,7 +29,7 @@ DEALINGS IN THE SOFTWARE.
 module main;
 
 import std.stdio;
-import std.process: shell;
+import std.process: executeShell;
 import std.string;
 import std.path;
 

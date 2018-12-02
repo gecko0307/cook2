@@ -143,7 +143,7 @@ class Exdep
             else
                 command = format("git clone git@%s:%s.git %s", hostname, path, location);
             writeln(command);
-            std.process.system(command);
+            executeShell(command);
         }
     }
 
@@ -153,7 +153,7 @@ class Exdep
         {
             string command = format("cd %s && git pull", location);
             writeln(command);
-            std.process.system(command);
+            executeShell(command);
         }
     }
 }
