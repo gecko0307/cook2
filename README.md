@@ -2,6 +2,8 @@
 =====
 Cook is a fast incremental build tool intended for projects in D language. In contrast to most other build automation programs, Cook by default requires no project hierarchy description - it automatically collects information about imports from D source files in project directory. Moreover, Cook caches dependencies between modules, and then uses this cache to find out which modules had been changed and need recompiling.
 
+NOTE: Cook is not being developed anymore. This repository is in maintainance mode, and there will be only bugfix releases. Please, consider using Dub instead of Cook.
+
 Requirements
 ------------
 Cook is written in D and supports Windows and Linux. By default it works with Digital Mars D compiler (DMD), but you can use it with other compilers (and, for some extent, even with other languages!) as well by writing proper configuration file.
