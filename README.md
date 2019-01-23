@@ -20,7 +20,11 @@ Features
 * Can cross-compile Windows programs under Linux using Wine
 * Supports automatic dependency resolution from remote Git repositories or local directories (experimental feature). No need for a package registry - everything is fully decentralized, you can fetch any Git repository in the world
 
+Documentation
+-------------
+[http://gecko0307.github.io/cook2](http://gecko0307.github.io/cook2/)
+
 License
 -------
-Copyright (c) 2011-2014 Timur Gafarov. Distributed under the Boost Software License, Version 1.0. (See accompanying file COPYING or at http://www.boost.org/LICENSE_1_0.txt)
+Copyright (c) 2011-2019 Timur Gafarov. Distributed under the Boost Software License, Version 1.0. (See accompanying file COPYING or at http://www.boost.org/LICENSE_1_0.txt)
 
