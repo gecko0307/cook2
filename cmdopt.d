@@ -30,7 +30,8 @@ module cmdopt;
 
 import std.stdio;
 import std.getopt;
-import std.c.process;
+import std.process;
+import core.stdc.stdlib;
 
 class CmdOptions
 {
@@ -97,7 +98,7 @@ class CmdOptions
         catch(Exception)
         {
             writeln("Illegal option");
-            std.c.process.exit(1);
+            core.stdc.stdlib.exit(1);
         }
 
         program = args[0];
